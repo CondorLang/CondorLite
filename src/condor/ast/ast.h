@@ -30,7 +30,7 @@ typedef struct Scope Scope; // forward declare
 typedef struct ASTNode ASTNode; // forward declare
 typedef struct ASTList ASTList; // forward declare
 
-// Getters
+// Getters for the ASTNode
 #define GET_VAR(node) node->meta.varExpr
 #define GET_VAR_VALUE(node) node->meta.varExpr.value
 #define GET_VAR_TYPE(node) node->meta.varExpr.dataType
@@ -58,6 +58,7 @@ typedef struct ASTList ASTList; // forward declare
 #define GET_FUNC_CALL_FUNC(node) node->meta.funcCallExpr.func
 #define GET_FUNC_CALL_FUNC_PARAMS(node) GET_FUNC_PARAMS(node->meta.funcCallExpr.func)
 #define GET_FUNC_BODY(node) node->meta.funcExpr.body
+// End Getters
 
 // Setters
 #define SET_RETURN_TYPE(node, t) node->meta.returnStmt.type = t

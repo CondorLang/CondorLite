@@ -82,6 +82,13 @@ void BuildTree(char* rawSourceCode){
 	Runner runner;
 	RunnerContext runnerContexts[totalVars];
 	runner.contexts = runnerContexts;
+	bool contextUsed[totalVars];
+	runner.contextUsed = contextUsed;
+
+	for (int i = 0; i < totalVars; i++) {
+		runner.contextUsed[i] = false;
+	}
+
 	runner.totalContexts = totalVars;
 	InitRunner(&runner, &scope);
 	Run(&runner, scope.scopes[0]);

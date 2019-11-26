@@ -58,6 +58,16 @@ typedef struct ASTList ASTList; // forward declare
 #define GET_FUNC_CALL_FUNC(node) node->meta.funcCallExpr.func
 #define GET_FUNC_CALL_FUNC_PARAMS(node) GET_FUNC_PARAMS(node->meta.funcCallExpr.func)
 #define GET_FUNC_BODY(node) node->meta.funcExpr.body
+
+#define GET_BOOLEAN_VALUE(node) node->meta.booleanExpr.value
+#define GET_BYTE_VALUE(node) node->meta.byteExpr.value
+#define GET_SHORT_VALUE(node) node->meta.shortExpr.value
+#define GET_INT_VALUE(node) node->meta.intExpr.value
+#define GET_FLOAT_VALUE(node) node->meta.floatExpr.value
+#define GET_DOUBLE_VALUE(node) node->meta.doubleExpr.value
+#define GET_LONG_VALUE(node) node->meta.longExpr.value
+#define GET_CHAR_VALUE(node) node->meta.charExpr.value
+#define GET_STRING_VALUE(node) node->meta.stringExpr.value
 // End Getters
 
 // Setters

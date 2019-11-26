@@ -2,7 +2,6 @@
 
 void InitRunner(Runner* runner, Scope* scope) {
   runner->scope = scope;
-  runner->contextSpot = 0;
   for (int i = 0; i < runner->totalContexts; i++){
     RunnerContext* context = &runner->contexts[i];
     context->node = NULL;
@@ -20,16 +19,55 @@ RunnerContext* Run(Runner* runner, int scopeId) {
       RunnerContext* context = RunStatement(runner);
       
       if (node->type == RETURN){
+        // Reset to return node
+        context->node = node;
         return context;
       }
 
-      if (node->type != FUNC) {
+      if (node->type != FUNC && scopeId == 1) {
         PrintContext(context);
       }
     }
   }
 
   return NULL;
+}
+
+void GCScope(Runner* runner, int scopeId) {
+  Scope* scope = runner->scope;
+
+  for (int i = 0; i < scope->nodeLength; i++){
+    ASTNode* node = &scope->nodes[i];
+    if (node->scopeId == scopeId){
+      // Don't GC return contexts
+      if (node->type == RETURN) {
+        continue;
+      }
+
+      GCContextByNodeId(runner, node->id);
+    }
+  }
+}
+
+void GCAstList(Runner* runner, ASTList* list) {
+  FOREACH_AST(list) {
+    GCContextByNodeId(runner, item->node->id);
+  }
+}
+
+void GCContextByNodeId(Runner* runner, int nodeId) {
+  for (int i = 0; i < runner->totalContexts; i++) {
+    RunnerContext* context = &runner->contexts[i];
+    if (runner->contextUsed[i] && context->node->id == nodeId) {
+      ResetRunnerContext(context);
+      runner->contextUsed[i] = false;
+    }
+  }
+}
+
+void ResetRunnerContext(RunnerContext* context) {
+  context->node = NULL;
+  context->dataType = UNDEFINED;
 }
 
 RunnerContext* RunStatement(Runner* runner){
@@ -41,7 +79,7 @@ RunnerContext* RunStatement(Runner* runner){
       return RunFuncCall(runner);
     }
     case RETURN: {
-      runner->currentNode = node->meta.returnStmt.value;
+      runner->currentNode = GET_RETURN_VALUE(node);
       return RunStatement(runner);
     }
     case BINARY: {
@@ -55,9 +93,9 @@ RunnerContext* RunStatement(Runner* runner){
 RunnerContext* RunBinary(Runner* runner){
   DEBUG_PRINT_RUNNER("Binary expression")
   ASTNode* binary = runner->currentNode;
-  ASTNode* left = binary->meta.binaryExpr.left;
-  ASTNode* right = binary->meta.binaryExpr.right;
-  Token op = binary->meta.binaryExpr.op;
+  ASTNode* left = GET_BIN_LEFT(binary);
+  ASTNode* right = GET_BIN_RIGHT(binary);
+  Token op = GET_BIN_OP(binary);
 
   RunnerContext* leftContext = SetNodeValue(runner, left);
   runner->currentNode = right;
@@ -67,8 +105,6 @@ RunnerContext* RunBinary(Runner* runner){
 }
 
 RunnerContext* RunMathContexts(RunnerContext* left, RunnerContext* right, Token op){
-  DEBUG_PRINT_RUNNER("Math")
-
   if (left->dataType == STRING || right->dataType == STRING){
     NOT_IMPLEMENTED("String concatenation");
   }
@@ -81,6 +117,8 @@ RunnerContext* RunMathContexts(RunnerContext* left, RunnerContext* right, Token 
     double leftVal = ContextToDouble(left);
     double rightVal = ContextToDouble(right);
 
+    DEBUG_RUNNER("Runner: Math: %f %s %f\n", leftVal, TokenToString(op), rightVal)
+
     // TODO: Figure out true type
     left->value.vDouble = RunMath(leftVal, rightVal, op);
     CastToType(left);
@@ -90,9 +128,9 @@ RunnerContext* RunMathContexts(RunnerContext* left, RunnerContext* right, Token 
 }
 
 RunnerContext* RunFuncCall(Runner* runner){
-  DEBUG_PRINT_RUNNER("Function Call")
   ASTList* params = GET_FUNC_CALL_PARAMS(runner->currentNode);
   ASTNode* func = GET_FUNC_CALL_FUNC(runner->currentNode);
+  DEBUG_RUNNER("Runner: Function Call %s()\n", GET_FUNC_NAME(func));
   return RunFuncWithArgs(runner, func, params);
 }
 
@@ -116,12 +154,13 @@ RunnerContext* RunFuncWithArgs(Runner* runner, ASTNode* func, ASTList* args){
     argIdx++;
   }
 
-  return Run(runner, func->meta.funcExpr.body);
+  RunnerContext* context = Run(runner, GET_FUNC_BODY(func));
+  GCScope(runner, GET_FUNC_BODY(func));
+  GCAstList(runner, GET_FUNC_PARAMS(func));
+  return context;
 }
 
 RunnerContext* SetNodeValue(Runner* runner, ASTNode* node){
-  DEBUG_PRINT_RUNNER("Set node value")
-
   RunnerContext* context = GetContextByNodeId(runner, node->id);
   if (context != NULL){
     return context;
@@ -134,47 +173,56 @@ RunnerContext* SetNodeValue(Runner* runner, ASTNode* node){
   switch (type) {
     case BOOLEAN: {
       context->dataType = node->type;
-      context->value.vBoolean = node->meta.booleanExpr.value;
+      context->value.vBoolean = GET_BOOLEAN_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %d\n", context->value.vBoolean);
       break;
     }
     case BYTE: {
       context->dataType = BYTE;
-      context->value.vByte = node->meta.byteExpr.value;
+      context->value.vByte = GET_BYTE_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %d\n", context->value.vByte);
       break;
     }
     case SHORT: {
       context->dataType = SHORT;
-      context->value.vShort = node->meta.shortExpr.value;
+      context->value.vShort = GET_SHORT_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %d\n", context->value.vShort);
       break;
     }
     case INT: {
       context->dataType = INT;
-      context->value.vInt = node->meta.intExpr.value;
+      context->value.vInt = GET_INT_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %d\n", context->value.vInt);
       break;
     }
     case FLOAT: {
       context->dataType = FLOAT;
-      context->value.vFloat = node->meta.floatExpr.value;
+      context->value.vFloat = GET_FLOAT_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %f\n", context->value.vFloat);
       break;
     }
     case DOUBLE: {
       context->dataType = DOUBLE;
-      context->value.vDouble = node->meta.doubleExpr.value;
+      context->value.vDouble = GET_DOUBLE_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %f\n", context->value.vDouble);
       break;
     }
     case LONG: {
       context->dataType = LONG;
-      context->value.vLong = node->meta.longExpr.value;
+      context->value.vLong = GET_LONG_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %ld\n", context->value.vLong);
       break;
     }
     case CHAR: {
       context->dataType = CHAR;
-      context->value.vChar = node->meta.charExpr.value;
+      context->value.vChar = GET_CHAR_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %c\n", context->value.vChar);
       break;
     }
     case STRING: {
       context->dataType = STRING;
-      context->value.vString = node->meta.stringExpr.value;
+      context->value.vString = GET_STRING_VALUE(node);
+      DEBUG_RUNNER("Runner: Set node value: %s\n", context->value.vString);
       break;
     }
     case VAR: {
@@ -187,59 +235,59 @@ RunnerContext* SetNodeValue(Runner* runner, ASTNode* node){
 }
 
 void RunSetVarType(Runner* runner, RunnerContext* context, ASTNode* node){
-  int type = (int) node->meta.varExpr.dataType;
+  int type = (int) GET_VAR_TYPE(node);
   switch (type) {
     case BOOLEAN: {
       context->dataType = BOOLEAN;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vBoolean = varContext->value.vBoolean;
       break;
     }
     case BYTE: {
       context->dataType = BYTE;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vByte = varContext->value.vByte;
       break;
     }
     case SHORT: {
       context->dataType = SHORT;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vShort = varContext->value.vShort;
       break;
     }
     case INT: {
       context->dataType = INT;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vInt = varContext->value.vInt;
       break;
     }
     case FLOAT: {
       context->dataType = FLOAT;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vFloat = varContext->value.vFloat;
       break;
     }
     case DOUBLE: {
       context->dataType = DOUBLE;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vDouble = varContext->value.vDouble;
       break;
     }
     case LONG: {
       context->dataType = LONG;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vLong = varContext->value.vLong;
       break;
     }
     case CHAR: {
       context->dataType = CHAR;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vChar = varContext->value.vChar;
       break;
     }
     case STRING: {
       context->dataType = STRING;
-      RunnerContext* varContext = SetNodeValue(runner, node->meta.varExpr.value);
+      RunnerContext* varContext = SetNodeValue(runner, GET_VAR_VALUE(node));
       context->value.vString = varContext->value.vString;
       break;
     }
@@ -258,49 +306,53 @@ RunnerContext* GetContextByNodeId(Runner* runner, int nodeId){
 }
 
 RunnerContext* GetNextContext(Runner* runner) {
-  if (runner->contextSpot + 1 > runner->totalContexts) {
-    RUNTIME_ERROR("Ran out of contexts");
+  for (int i = 0; i < runner->totalContexts; i++) {
+    if (!runner->contextUsed[i]) {
+      runner->contextUsed[i] = true;
+      return &runner->contexts[i];  
+    }
   }
-  return &runner->contexts[runner->contextSpot++];
+
+  RUNTIME_ERROR("Ran out of contexts");
 }
 
 void PrintContext(RunnerContext* context){
   int type = (int) context->dataType;
   switch (type) {
     case BOOLEAN: {
-      printf("%d\n", context->value.vBoolean);
+      printf(">> %d\n", context->value.vBoolean);
       break;
     }
     case BYTE: {
-      printf("%d\n", context->value.vByte);
+      printf(">> %d\n", context->value.vByte);
       break;
     }
     case SHORT: {
-      printf("%d\n", context->value.vShort);
+      printf(">> %d\n", context->value.vShort);
       break;
     }
     case INT: {
-      printf("%d\n", context->value.vInt);
+      printf(">> %d\n", context->value.vInt);
       break;
     }
     case FLOAT: {
-      printf("%f\n", context->value.vFloat);
+      printf(">> %f\n", context->value.vFloat);
       break;
     }
     case DOUBLE: {
-      printf("%f\n", context->value.vDouble);
+      printf(">> %f\n", context->value.vDouble);
       break;
     }
     case LONG: {
-      printf("%ld\n", context->value.vLong);
+      printf(">> %ld\n", context->value.vLong);
       break;
     }
     case CHAR: {
-      printf("%d\n", context->value.vChar);
+      printf(">> %d\n", context->value.vChar);
       break;
     }
     case STRING: {
-      printf("%s\n", context->value.vString);
+      printf(">> %s\n", context->value.vString);
       break;
     }
   }

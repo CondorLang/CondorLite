@@ -36,6 +36,12 @@ void RunSetVarType(Runner* runner, RunnerContext* context, ASTNode* node);
 RunnerContext* RunMathContexts(RunnerContext* left, RunnerContext* right, Token op);
 void PrintContext(RunnerContext* context);
 
+void GCScope(Runner* runner, int scopeId);
+void GCAstList(Runner* runner, ASTList* list);
+void GCContextByNodeId(Runner* runner, int nodeId);
+
+void ResetRunnerContext(RunnerContext* context);
+
 #define CONTEXT_BOOLEAN_VALUE(node) node->value.booleanValue.value
 #define CONTEXT_INT_VALUE(node) node->value.intValue.value
 

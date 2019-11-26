@@ -39,7 +39,8 @@ if(DEBUG_TRACK)
 endif()
 
 if(RUN_TESTS)
-	set_c_flag('-DTEST=1')
+	add_subdirectory(tests)
+	# set_c_flag('-DTEST=1')
 endif()
 
 if(EXPAND_AST)

@@ -29,9 +29,9 @@ typedef struct Runner {
   Scope* scope;
   ASTNode* currentNode;
   RunnerContext* contexts;
+	bool* contextUsed;
 
   int totalContexts;
-  int contextSpot;
 } Runner;
 
 #endif // RUNNER_TYPES_H_

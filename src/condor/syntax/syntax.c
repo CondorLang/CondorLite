@@ -173,7 +173,7 @@ ASTNode* ParseFunc(Scope* scope, Lexer* lexer){
 	func->meta.funcExpr.name = Allocate((sizeof(char) * strlen(lexer->currentTokenString)) + sizeof(char));
 	strcpy(func->meta.funcExpr.name, lexer->currentTokenString);
 
-	func->meta.funcExpr.params = ParseParams(scope, lexer);
+	func->meta.funcExpr.params = ParseParams(scope, lexer, true);
 	func->meta.funcExpr.body = ParseBody(scope, lexer);
 	SET_IS_STMT(func);
 	return func;
@@ -214,12 +214,13 @@ ASTNode* ParseFuncCall(Scope* scope, Lexer* lexer){
 	return funcCall;
 }
 
-ASTList* ParseParams(Scope* scope, Lexer* lexer){
+ASTList* ParseParams(Scope* scope, Lexer* lexer, bool nextScope){
 	DEBUG_PRINT_SYNTAX("Func Param");
 	TRACK();
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
 	ASTList* list = GetNextASTList(scope);
+
 	while (tok != RPAREN){
 		tok = GetNextToken(lexer);
 		ASTListItem* item = GetNextASTListItem(scope);
@@ -233,6 +234,7 @@ ASTList* ParseParams(Scope* scope, Lexer* lexer){
 		tok = GetCurrentToken(lexer);
 	}
 	list->last = list->current;
+
 	return list;
 }
 
@@ -445,7 +447,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 
 			SET_NODE_TYPE(call, FUNC_CALL);
 			call->meta.funcCallExpr.func = func;
-			call->meta.funcCallExpr.params = ParseParams(scope, lexer);
+			call->meta.funcCallExpr.params = ParseParams(scope, lexer, false);
 			result = call;
 		}	
 

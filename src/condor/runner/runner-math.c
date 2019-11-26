@@ -1,4 +1,5 @@
 #include "runner-math.h"
+#include <stdint.h>
 
 double ContextToDouble(RunnerContext* context){
   int type = (int) context->dataType;

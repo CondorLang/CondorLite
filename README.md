@@ -1,4 +1,4 @@
-# <img src='https://github.com/CondorLang/Condor/blob/master/web/images/CondorLogo.png' width='40px' /> Condor
+# <img src='https://github.com/CondorLang/Condor/blob/master/web/images/CondorLogo.png' width='40px' /> Condor <img src='https://github.com/CondorLang/CondorLite/workflows/C/C++%20CI/badge.svg'>
 
 # Experiemental C Creation
 The purpose behind this part of the library is to optimize speed. When using the Malloc call, 

@@ -1,4 +1,4 @@
-# <img src='https://github.com/CondorLang/Condor/blob/master/web/images/CondorLogo.png' width='40px' />
+# <img src='https://github.com/CondorLang/Condor/blob/master/web/images/CondorLogo.png' width='40px' /> Condor
 
 # Experiemental C Creation
 The purpose behind this part of the library is to optimize speed. When using the Malloc call, 
@@ -8,7 +8,7 @@ to be portable for any operating system.
 
 ## Building
 ```
-./init [-d|--debug] [-e|--execute] [-c|--clean] [-n|--namespace fileName] [-t|--test] [-s|--debug-syntax]
+./configure [-d|--debug] [-e|--execute] [-c|--clean] [-n|--namespace fileName] [-t|--test] [-s|--debug-syntax]
 ```
 
 ### Arguments

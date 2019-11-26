@@ -34,8 +34,8 @@ ASTNode* ParseFor(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("For");
 	TRACK();
 	ASTNode* forExpr = GetNextNode(scope);
-	forExpr->isStmt = true;
-	forExpr->type = FOR;
+	SET_IS_STMT(forExpr);
+	SET_NODE_TYPE(forExpr, FOR);
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
@@ -47,7 +47,7 @@ ASTNode* ParseFor(Scope* scope, Lexer* lexer){
 	 */
 	ASTNode* var = ParseVar(scope, lexer, tok);
 
-	forExpr->meta.forExpr.var = var;
+	SET_FOR_VAR(forExpr, var);
 	forExpr->meta.forExpr.condition = ParseExpression(scope, lexer);
 	forExpr->meta.forExpr.inc = ParseExpression(scope, lexer);
 
@@ -65,8 +65,8 @@ ASTNode* ParseIf(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("If");
 	TRACK();
 	ASTNode* ifExpr = GetNextNode(scope);
-	ifExpr->isStmt = true;
-	ifExpr->type = IF;
+	SET_IS_STMT(ifExpr);
+	SET_NODE_TYPE(ifExpr, IF);
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
@@ -83,8 +83,8 @@ ASTNode* ParseWhile(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("While");
 	TRACK();
 	ASTNode* whileStmt = GetNextNode(scope);
-	whileStmt->isStmt = true;
-	whileStmt->type = WHILE;
+	SET_IS_STMT(whileStmt);
+	SET_NODE_TYPE(whileStmt, WHILE);
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
@@ -101,8 +101,8 @@ ASTNode* ParseSwitch(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("Switch");
 	TRACK();
 	ASTNode* switchStmt = GetNextNode(scope);
-	switchStmt->isStmt = true;
-	switchStmt->type = SWITCH;
+	SET_IS_STMT(switchStmt);
+	SET_NODE_TYPE(switchStmt, SWITCH);
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
@@ -120,8 +120,8 @@ ASTNode* ParseCase(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("Case");
 	TRACK();
 	ASTNode* caseStmt = GetNextNode(scope);
-	caseStmt->isStmt = true;
-	caseStmt->type = CASE;
+	SET_IS_STMT(caseStmt);
+	SET_NODE_TYPE(caseStmt, CASE);
 
 	caseStmt->meta.caseStmt.condition = ParseExpression(scope, lexer);
 	Token tok = GetCurrentToken(lexer);
@@ -139,9 +139,9 @@ ASTNode* ParseReturn(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("Return");
 	TRACK();
 	ASTNode* var = GetNextNode(scope);
-	var->type = RETURN;
+	SET_NODE_TYPE(var, RETURN);
 	var->meta.returnStmt.value = ParseExpression(scope, lexer);
-	var->isStmt = true;
+	SET_IS_STMT(var);
 	return var;
 }
 
@@ -153,8 +153,8 @@ ASTNode* ParseBreak(Scope* scope, Lexer* lexer){
 	DEBUG_PRINT_SYNTAX("Break");
 	TRACK();
 	ASTNode* Break = GetNextNode(scope);
-	Break->type = BREAK;
-	Break->isStmt = true;
+	SET_NODE_TYPE(Break, BREAK);
+	SET_IS_STMT(Break);
 	return Break;
 }
 
@@ -165,7 +165,7 @@ ASTNode* ParseBreak(Scope* scope, Lexer* lexer){
 ASTNode* ParseFunc(Scope* scope, Lexer* lexer){
 	TRACK();
 	ASTNode* func = GetNextNode(scope);
-	func->type = FUNC;
+	SET_NODE_TYPE(func, FUNC);
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, IDENTIFIER, lexer);
 	DEBUG_PRINT_SYNTAX2("Func", lexer->currentTokenString);
@@ -175,7 +175,7 @@ ASTNode* ParseFunc(Scope* scope, Lexer* lexer){
 
 	func->meta.funcExpr.params = ParseParams(scope, lexer);
 	func->meta.funcExpr.body = ParseBody(scope, lexer);
-	func->isStmt = true;
+	SET_IS_STMT(func);
 	return func;
 }
 
@@ -190,9 +190,9 @@ ASTNode* ParseFuncCall(Scope* scope, Lexer* lexer){
 	EXPECT_TOKEN(tok, IDENTIFIER, lexer);
 
 	ASTNode* funcCall = GetNextNode(scope);
-	funcCall->type = FUNC_CALL;
+	SET_NODE_TYPE(funcCall, FUNC_CALL);
 	funcCall->meta.funcCallExpr.func = FindSymbol(scope, lexer->currentTokenString);
-	funcCall->isStmt = true;
+	SET_IS_STMT(funcCall);
 
 	tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
@@ -363,7 +363,7 @@ ASTNode* ParseVar(Scope* scope, Lexer* lexer, Token dataType){
 	}
 	else{
 		var = GetNextNode(scope);
-		var->type = VAR;
+		SET_NODE_TYPE(var, VAR);
 		var->meta.varExpr.dataType = dataType;
 
 		tok = GetNextToken(lexer);
@@ -373,7 +373,7 @@ ASTNode* ParseVar(Scope* scope, Lexer* lexer, Token dataType){
 		char* name = lexer->currentTokenString;
 		var->meta.varExpr.name = Allocate((sizeof(char) * strlen(name)) + sizeof(char));
 		var->meta.varExpr.value = NULL; // mem issue prevention
-		var->isStmt = true; // is statement node
+		SET_IS_STMT(var);
 		var->meta.varExpr.inc = UNDEFINED;
 		strcpy(var->meta.varExpr.name, name);
 		DEBUG_PRINT_SYNTAX2(TokenToString(dataType), name);
@@ -415,7 +415,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 	}
 	else if (tok == STRING){
 		ASTNode* str = GetNextNode(scope);
-		str->type = STRING;
+		SET_NODE_TYPE(str, STRING);
 		str->meta.stringExpr.value = Allocate((sizeof(char) * strlen(value)) + sizeof(char));
 
 		strcpy(str->meta.stringExpr.value, value);
@@ -443,7 +443,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 			ASTNode* call = GetNextNode(scope);
 			ASTNode* func = FindSymbol(scope, value);
 
-			call->type = FUNC_CALL;
+			SET_NODE_TYPE(call, FUNC_CALL);
 			call->meta.funcCallExpr.func = func;
 			call->meta.funcCallExpr.params = ParseParams(scope, lexer);
 			result = call;
@@ -465,7 +465,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 	}
 	else if (tok == TRUE_LITERAL || tok == FALSE_LITERAL){
 		result = GetNextNode(scope);
-		result->type = BOOLEAN;
+		SET_NODE_TYPE(result, BOOLEAN);
 
 		// Build the ASTLiteral node
 		result->meta.booleanExpr.value = tok == TRUE_LITERAL;
@@ -477,7 +477,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 		int loc = scope->nodeSpot++;
 		ASTNode* left = result; // Is this a safe assumption?
 		ASTNode* binary = &scope->nodes[loc];
-		binary->type = BINARY;
+		SET_NODE_TYPE(binary, BINARY);
 		binary->meta.binaryExpr.op = tok;
 		binary->meta.binaryExpr.left = left;
 		binary->meta.binaryExpr.right = ParseExpression(scope, lexer);

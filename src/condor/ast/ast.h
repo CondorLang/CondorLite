@@ -62,6 +62,9 @@ typedef struct ASTList ASTList; // forward declare
 
 // Setters
 #define SET_RETURN_TYPE(node, t) node->meta.returnStmt.type = t
+#define SET_IS_STMT(node) node->isStmt = true
+#define SET_NODE_TYPE(node, value) node->type = value
+#define SET_FOR_VAR(node, value) node->meta.forExpr.var = value
 
 struct ASTNode {
 	Token type;

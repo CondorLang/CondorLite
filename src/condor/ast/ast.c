@@ -2,6 +2,9 @@
 
 int ASTNODE_ID_SPOT = 1;
 
+/**
+ * Simple init
+ */
 void InitNodes(ASTNode nodes[], int len){
 	for (int i = 0; i < len; i++){
 		nodes[i].id = ASTNODE_ID_SPOT++;
@@ -11,6 +14,9 @@ void InitNodes(ASTNode nodes[], int len){
 	}
 }
 
+/**
+ * Free up any unused memory
+ */
 void DestroyNodes(ASTNode nodes[], int len){
 	for (int i = 0; i < len; i++){
 		int type = (int) nodes[i].type;
@@ -21,6 +27,11 @@ void DestroyNodes(ASTNode nodes[], int len){
 	}
 }
 
+/**
+ * Expand the ASTNode object and all the children.
+ * This can be called when the ./configure -a
+ * is called.
+ */
 char* ExpandASTNode(Scope* scope, ASTNode* node, int tab){
 	if (node == NULL) return "";
 	char tabs[(tab * 2) + 1];

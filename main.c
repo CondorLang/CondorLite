@@ -20,7 +20,7 @@ int main(){
 	
 	// Scan("func sumAddOne(int a, int b, int c) return a + b + c + 1; sumAddOne(8,10000, 1);");
 	// Scan("func add(int a, int b) return a + b; func multiply(int a, int b) return a * b; multiply(add(1, 1), add(2, 2))");
-	Scan("func add(int a, int b) return a + b; func multiply(int a, int b) return a * b; add(1, 1); add(2, 2);");
+	Scan("func add(int a, int b) return a + b; func multiply(int x, int y) return x * y; add(1, 1); add(2, 2); add(100, 100); multiply(80, 2)");
 
 	// printf("Press enter to continue...\n");
 	// getchar();

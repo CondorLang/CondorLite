@@ -161,6 +161,7 @@ RunnerContext* RunFuncWithArgs(Runner* runner, ASTNode* func, ASTList* args){
 }
 
 RunnerContext* SetNodeValue(Runner* runner, ASTNode* node){
+  CHECK(node != NULL);
   RunnerContext* context = GetContextByNodeId(runner, node->id);
   if (context != NULL){
     return context;

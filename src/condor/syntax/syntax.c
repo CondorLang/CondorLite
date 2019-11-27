@@ -48,12 +48,12 @@ ASTNode* ParseFor(Scope* scope, Lexer* lexer){
 	ASTNode* var = ParseVar(scope, lexer, tok);
 
 	SET_FOR_VAR(forExpr, var);
-	forExpr->meta.forExpr.condition = ParseExpression(scope, lexer);
-	forExpr->meta.forExpr.inc = ParseExpression(scope, lexer);
+	SET_FOR_CONDITION(forExpr, ParseExpression(scope, lexer));
+	SET_FOR_INC(forExpr, ParseExpression(scope, lexer));
 
 	tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, RPAREN, lexer);
-	forExpr->meta.forExpr.body = ParseBody(scope, lexer);
+	SET_FOR_BODY(forExpr, ParseBody(scope, lexer));
 	return forExpr;
 }
 
@@ -70,8 +70,8 @@ ASTNode* ParseIf(Scope* scope, Lexer* lexer){
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
-	ifExpr->meta.ifExpr.condition = ParseExpression(scope, lexer);
-	ifExpr->meta.ifExpr.body = ParseBody(scope, lexer);
+	SET_IF_CONDITION(ifExpr, ParseExpression(scope, lexer));
+	SET_IF_BODY(ifExpr, ParseBody(scope, lexer));
 	return ifExpr;
 }
 
@@ -88,8 +88,8 @@ ASTNode* ParseWhile(Scope* scope, Lexer* lexer){
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
-	whileStmt->meta.whileExpr.condition = ParseExpression(scope, lexer);
-	whileStmt->meta.whileExpr.body = ParseBody(scope, lexer);
+	SET_WHILE_CONDITION(whileStmt, ParseExpression(scope, lexer));
+	SET_WHILE_BODY(whileStmt, ParseBody(scope, lexer));
 	return whileStmt;
 }
 
@@ -106,8 +106,8 @@ ASTNode* ParseSwitch(Scope* scope, Lexer* lexer){
 
 	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
-	switchStmt->meta.switchExpr.condition = ParseExpression(scope, lexer);
-	switchStmt->meta.whileExpr.body = ParseBody(scope, lexer);
+	SET_SWITCH_CONDITION(switchStmt, ParseExpression(scope, lexer));
+	SET_SWITCH_BODY(switchStmt, ParseBody(scope, lexer));
 
 	return switchStmt;
 }
@@ -123,10 +123,10 @@ ASTNode* ParseCase(Scope* scope, Lexer* lexer){
 	SET_IS_STMT(caseStmt);
 	SET_NODE_TYPE(caseStmt, CASE);
 
-	caseStmt->meta.caseStmt.condition = ParseExpression(scope, lexer);
+	SET_CASE_CONDITION(caseStmt, ParseExpression(scope, lexer));
 	Token tok = GetCurrentToken(lexer);
 	EXPECT_TOKEN(tok, COLON, lexer);
-	caseStmt->meta.caseStmt.body = ParseBody(scope, lexer);
+	SET_CASE_BODY(caseStmt, ParseBody(scope, lexer));
 
 	return caseStmt;
 }
@@ -140,7 +140,7 @@ ASTNode* ParseReturn(Scope* scope, Lexer* lexer){
 	TRACK();
 	ASTNode* var = GetNextNode(scope);
 	SET_NODE_TYPE(var, RETURN);
-	var->meta.returnStmt.value = ParseExpression(scope, lexer);
+	SET_RETURN_VALUE(var, ParseExpression(scope, lexer));
 	SET_IS_STMT(var);
 	return var;
 }
@@ -170,12 +170,12 @@ ASTNode* ParseFunc(Scope* scope, Lexer* lexer){
 	EXPECT_TOKEN(tok, IDENTIFIER, lexer);
 	DEBUG_PRINT_SYNTAX2("Func", lexer->currentTokenString);
 
-	func->meta.funcExpr.name = Allocate((sizeof(char) * strlen(lexer->currentTokenString)) + sizeof(char));
-	strcpy(func->meta.funcExpr.name, lexer->currentTokenString);
+	SET_FUNC_NAME(func, Allocate((sizeof(char) * strlen(lexer->currentTokenString)) + sizeof(char)));
+	strcpy(GET_FUNC_NAME(func), lexer->currentTokenString);
 
-	func->meta.funcExpr.params = ParseParams(scope, lexer, true);
-	func->meta.funcExpr.body = ParseBody(scope, lexer);
-	SET_IS_STMT(func);
+	SET_FUNC_PARAMS(func, ParseParams(scope, lexer, true));
+	SET_FUNC_BODY(func, ParseBody(scope, lexer));
+	// SET_IS_STMT(func);
 	return func;
 }
 
@@ -191,14 +191,21 @@ ASTNode* ParseFuncCall(Scope* scope, Lexer* lexer){
 
 	ASTNode* funcCall = GetNextNode(scope);
 	SET_NODE_TYPE(funcCall, FUNC_CALL);
-	funcCall->meta.funcCallExpr.func = FindSymbol(scope, lexer->currentTokenString);
+	SET_FUNC_CALL_FUNC(funcCall, FindSymbol(scope, lexer->currentTokenString));
 	SET_IS_STMT(funcCall);
+	SET_FUNC_CALL_ARGS(funcCall, ParseArgs(scope, lexer));
+	return funcCall;
+}
 
-	tok = GetNextToken(lexer);
+ASTList* ParseArgs(Scope* scope, Lexer* lexer){
+	DEBUG_PRINT_SYNTAX("Func Args");
+	TRACK();
+	Token tok = GetNextToken(lexer);
 	EXPECT_TOKEN(tok, LPAREN, lexer);
 	ASTList* list = GetNextASTList(scope);
 
 	while (tok != RPAREN){
+		// tok = GetNextToken(lexer);
 		ASTListItem* item = GetNextASTListItem(scope);
 		item->node = ParseExpression(scope, lexer);
 		item->prev = list->current;
@@ -209,9 +216,9 @@ ASTNode* ParseFuncCall(Scope* scope, Lexer* lexer){
 		if (list->first == NULL) list->first = item;
 		tok = GetCurrentToken(lexer);
 	}
+	list->last = list->current;
 
-	funcCall->meta.funcCallExpr.params = list;
-	return funcCall;
+	return list;
 }
 
 ASTList* ParseParams(Scope* scope, Lexer* lexer, bool nextScope){
@@ -366,18 +373,18 @@ ASTNode* ParseVar(Scope* scope, Lexer* lexer, Token dataType){
 	else{
 		var = GetNextNode(scope);
 		SET_NODE_TYPE(var, VAR);
-		var->meta.varExpr.dataType = dataType;
+		SET_VAR_TYPE(var, dataType);
 
 		tok = GetNextToken(lexer);
 		EXPECT_TOKEN(tok, IDENTIFIER, lexer);
 
 		// Set the name of the variable
 		char* name = lexer->currentTokenString;
-		var->meta.varExpr.name = Allocate((sizeof(char) * strlen(name)) + sizeof(char));
-		var->meta.varExpr.value = NULL; // mem issue prevention
+		SET_VAR_NAME(var, Allocate((sizeof(char) * strlen(name)) + sizeof(char)));
+		SET_VAR_VALUE(var, NULL);
 		SET_IS_STMT(var);
-		var->meta.varExpr.inc = UNDEFINED;
-		strcpy(var->meta.varExpr.name, name);
+		SET_VAR_INC(var, UNDEFINED);
+		strcpy(GET_VAR_NAME(var), name);
 		DEBUG_PRINT_SYNTAX2(TokenToString(dataType), name);
 	}
 
@@ -390,7 +397,7 @@ ASTNode* ParseVar(Scope* scope, Lexer* lexer, Token dataType){
 	// Only assignment operators are valid after a VAR declaration
 	if (!IsAssignment(tok)) EXPECT_STRING("Assignment Operator");
 	if (tok == ASSIGN){ // var a = 	
-		var->meta.varExpr.value = ParseExpression(scope, lexer);
+		SET_VAR_VALUE(var, ParseExpression(scope, lexer));
 		return var;
 	}
 	NOT_IMPLEMENTED("Other assignment types");
@@ -418,18 +425,18 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 	else if (tok == STRING){
 		ASTNode* str = GetNextNode(scope);
 		SET_NODE_TYPE(str, STRING);
-		str->meta.stringExpr.value = Allocate((sizeof(char) * strlen(value)) + sizeof(char));
+		SET_STRING_VALUE(str, Allocate((sizeof(char) * strlen(value)) + sizeof(char)));
 
-		strcpy(str->meta.stringExpr.value, value);
+		strcpy(GET_STRING_VALUE(str), value);
 
 		// Remove the quotes around the string.
 		memmove(
-			&str->meta.stringExpr.value[0], 
-			&str->meta.stringExpr.value[1], 
-			strlen(str->meta.stringExpr.value) - 0);
+			&GET_STRING_VALUE(str)[0], 
+			&GET_STRING_VALUE(str)[1], 
+			strlen(GET_STRING_VALUE(str)) - 0);
 		memmove(
-			&str->meta.stringExpr.value[strlen(str->meta.stringExpr.value) - 1], 
-			&str->meta.stringExpr.value[strlen(str->meta.stringExpr.value)], 
+			&GET_STRING_VALUE(str)[strlen(GET_STRING_VALUE(str)) - 1], 
+			&GET_STRING_VALUE(str)[strlen(GET_STRING_VALUE(str))], 
 			1);
 
 		tok = GetNextToken(lexer);
@@ -446,11 +453,10 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 			ASTNode* func = FindSymbol(scope, value);
 
 			SET_NODE_TYPE(call, FUNC_CALL);
-			call->meta.funcCallExpr.func = func;
-			call->meta.funcCallExpr.params = ParseParams(scope, lexer, false);
+			SET_FUNC_CALL_FUNC(call, func);
+			SET_FUNC_CALL_ARGS(call, ParseArgs(scope, lexer));
 			result = call;
-		}	
-
+		}
 		else {
 			ASTNode* symbol = FindSymbol(scope, value);
 			if (symbol == NULL){
@@ -462,7 +468,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 		tok = GetNextToken(lexer);
 
 		if (tok == INC || tok == DEC){
-			result->meta.varExpr.inc = tok;
+			SET_VAR_INC(result, tok);
 		}
 	}
 	else if (tok == TRUE_LITERAL || tok == FALSE_LITERAL){
@@ -470,7 +476,7 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 		SET_NODE_TYPE(result, BOOLEAN);
 
 		// Build the ASTLiteral node
-		result->meta.booleanExpr.value = tok == TRUE_LITERAL;
+		SET_BOOLEAN_VALUE(result, tok == TRUE_LITERAL);
 
 		tok = GetNextToken(lexer);
 	}
@@ -480,9 +486,9 @@ ASTNode* ParseExpression(Scope* scope, Lexer* lexer){
 		ASTNode* left = result; // Is this a safe assumption?
 		ASTNode* binary = &scope->nodes[loc];
 		SET_NODE_TYPE(binary, BINARY);
-		binary->meta.binaryExpr.op = tok;
-		binary->meta.binaryExpr.left = left;
-		binary->meta.binaryExpr.right = ParseExpression(scope, lexer);
+		SET_BINARY_OP(binary, tok);
+		SET_BINARY_LEFT(binary, left);
+		SET_BINARY_RIGHT(binary, ParseExpression(scope, lexer));
 		result = binary;
 	}
 

@@ -54,7 +54,7 @@ typedef struct ASTList ASTList; // forward declare
 #define GET_FUNC_NAME(node) node->meta.funcExpr.name
 #define GET_FUNC_CALL_NAME(node) GET_FUNC_NAME(node->meta.funcCallExpr.func)
 #define GET_FUNC_PARAMS(node) node->meta.funcExpr.params
-#define GET_FUNC_CALL_PARAMS(node) node->meta.funcCallExpr.params
+#define GET_FUNC_CALL_PARAMS(node) node->meta.funcCallExpr.args
 #define GET_FUNC_CALL_FUNC(node) node->meta.funcCallExpr.func
 #define GET_FUNC_CALL_FUNC_PARAMS(node) GET_FUNC_PARAMS(node->meta.funcCallExpr.func)
 #define GET_FUNC_BODY(node) node->meta.funcExpr.body
@@ -72,9 +72,36 @@ typedef struct ASTList ASTList; // forward declare
 
 // Setters
 #define SET_RETURN_TYPE(node, t) node->meta.returnStmt.type = t
+#define SET_RETURN_VALUE(node, t) node->meta.returnStmt.value = t;
 #define SET_IS_STMT(node) node->isStmt = true
 #define SET_NODE_TYPE(node, value) node->type = value
 #define SET_FOR_VAR(node, value) node->meta.forExpr.var = value
+#define SET_FOR_CONDITION(node, value) node->meta.forExpr.condition = value
+#define SET_FOR_INC(node, value) node->meta.forExpr.inc = value
+#define SET_FOR_BODY(node, value) node->meta.forExpr.body = value
+#define SET_FUNC_CALL_FUNC(node, value) node->meta.funcCallExpr.func = value
+#define SET_FUNC_CALL_ARGS(node, value) node->meta.funcCallExpr.args = value
+#define SET_FUNC_BODY(node, value) node->meta.funcExpr.body = value
+#define SET_FUNC_PARAMS(node, value) node->meta.funcExpr.params = value
+#define SET_FUNC_NAME(node, value) node->meta.funcExpr.name = value
+#define SET_BINARY_OP(node, value) node->meta.binaryExpr.op = value
+#define SET_BINARY_LEFT(node, value) node->meta.binaryExpr.left = value
+#define SET_BINARY_RIGHT(node, value) node->meta.binaryExpr.right = value
+#define SET_BOOLEAN_VALUE(node, boolValue) node->meta.booleanExpr.value = boolValue
+#define SET_VAR_INC(node, value) node->meta.varExpr.inc = value
+#define SET_VAR_VALUE(node, varValue) node->meta.varExpr.value = varValue
+#define SET_VAR_NAME(node, varValue) node->meta.varExpr.name = varValue
+#define SET_VAR_TYPE(node, varValue) node->meta.varExpr.dataType = varValue
+#define SET_STRING_VALUE(node, strValue) node->meta.stringExpr.value = strValue
+#define SET_CASE_CONDITION(node, value) node->meta.caseStmt.condition = value
+#define SET_CASE_BODY(node, value) node->meta.caseStmt.body = value
+#define SET_SWITCH_CONDITION(node, value) node->meta.switchExpr.condition = value
+#define SET_SWITCH_BODY(node, value) node->meta.switchExpr.body = value
+#define SET_WHILE_CONDITION(node, value) node->meta.whileExpr.condition = value
+#define SET_WHILE_BODY(node, value) node->meta.whileExpr.body = value
+#define SET_IF_CONDITION(node, value) node->meta.ifExpr.condition = value
+#define SET_IF_BODY(node, value) node->meta.ifExpr.body = value
+// End Setters
 
 struct ASTNode {
 	Token type;
@@ -199,7 +226,7 @@ struct ASTNode {
 
 		struct {
 			ASTNode* func;
-			ASTList* params;
+			ASTList* args;
 		} funcCallExpr;
 
 	} meta;

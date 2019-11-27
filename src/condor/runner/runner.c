@@ -6,6 +6,7 @@ void InitRunner(Runner* runner, Scope* scope) {
     RunnerContext* context = &runner->contexts[i];
     context->node = NULL;
     context->dataType = UNDEFINED;
+    context->id = i + 1;
   }
 }
 
@@ -63,6 +64,11 @@ void GCContextByNodeId(Runner* runner, int nodeId) {
       runner->contextUsed[i] = false;
     }
   }
+}
+
+void GCContext(Runner* runner, RunnerContext* context){
+  runner->contextUsed[context->id - 1] = false;
+  ResetRunnerContext(context);
 }
 
 void ResetRunnerContext(RunnerContext* context) {
@@ -230,9 +236,23 @@ RunnerContext* SetNodeValue(Runner* runner, ASTNode* node){
       RunSetVarType(runner, context, node);
       break;
     }
+    case FUNC_CALL: {
+      ASTNode* previousNode = runner->currentNode;
+      runner->currentNode = node;
+      RunnerContext* newContext = RunFuncCall(runner);
+      runner->currentNode = previousNode;
+      MergeContextValues(newContext, context);
+      GCContext(runner, newContext);
+      break;
+    }
   }
 
   return context;
+}
+
+void MergeContextValues(RunnerContext* left, RunnerContext* right){
+  right->dataType = left->dataType;
+  right->value = left->value;
 }
 
 void RunSetVarType(Runner* runner, RunnerContext* context, ASTNode* node){

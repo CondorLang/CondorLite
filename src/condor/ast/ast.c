@@ -270,7 +270,7 @@ char* ExpandASTNode(Scope* scope, ASTNode* node, int tab){
 
 			bool first = true;
 			char* results = "";
-			FOREACH_AST(node->meta.funcCallExpr.params){
+			FOREACH_AST(node->meta.funcCallExpr.args){
 				results = ExpandASTNode(scope, item->node, tab + 2);
 				if (first) first = false;
 				else json2 = Concat(json2, ",");

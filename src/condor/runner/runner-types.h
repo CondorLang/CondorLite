@@ -10,6 +10,7 @@
 typedef struct RunnerContext {
   ASTNode* node;
   Token dataType;
+	int id;
 
   union {
 		bool vBoolean;

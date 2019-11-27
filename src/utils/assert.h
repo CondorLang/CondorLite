@@ -5,6 +5,7 @@
 #ifndef ASSERT_H_
 #define ASSERT_H_
 
+#include <execinfo.h>
 #include "condor/token/token.h"
 
 #define EXPECT_TOKEN(got, tok, lexer) if (tok != got) { \
@@ -14,7 +15,18 @@
 
 #define EXPECT_STRING(val) { printf("Expected: %s\n", val); exit(0); }
 #define NOT_IMPLEMENTED(val) { printf("Not Implemented (%s:%d): %s\n", __FUNCTION__, __LINE__, val); exit(0); }
-#define CHECK(condition) {if (condition == false) {printf("Invalid Check: %s in %s:%d\n", #condition, __FUNCTION__, __LINE__);}}
+#define CHECK(condition) { \
+	if (condition == false) { \
+		printf("Invalid Check: %s in %s:%d\n", #condition, __FUNCTION__, __LINE__); \
+		void* callstack[128]; \
+		int i, frames = backtrace(callstack, 128); \
+		char** strs = backtrace_symbols(callstack, frames); \
+		for (i = 0; i < frames; ++i) { \
+				printf("%s\n", strs[i]); \
+		} \
+		free(strs); \
+	} \
+}
 #define SEMANTIC_ERROR(msg) {printf("%s\n", msg); exit(0);}
 #define RUNTIME_ERROR(msg) {printf("%s\n", msg); exit(0);}
 #define SYMBOL_NOT_FOUND(symbol, lexer) {printf("Symbol not found: \"%s\", at %d:%d\n", symbol, lexer->tracker.row, lexer->tracker.col + lexer->tracker.currentTokenPosition - 1); exit(0);}

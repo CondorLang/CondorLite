@@ -134,6 +134,7 @@ void EnsureSemantics(Scope* scope, int scopeId){
  * Ensure the semantics for a given node
  */
 void EnsureSemanticsForNode(Scope* scope, ASTNode* node){
+	CHECK(node != NULL);
 	int type = (int) node->type;
 
 	switch (type){
